@@ -3,7 +3,7 @@
 A responsive weather dashboard built with **React, TypeScript, Vite, Material UI, and Tailwind CSS**. Search for a city and explore its current weather conditions through a clean, intuitive interface.
 
 <p align="center">
-  <img src="public/favicon.svg" width="80" alt="Weather Studio logo" />
+  <img src="./src/assets/favicon.svg" width="80" alt="Weather Studio logo" />
 </p>
 
 <p align="center">

@@ -281,7 +281,7 @@ function App() {
         <header className="mb-8">
           <div className="mb-3 flex items-center gap-2">
             <img
-              src="/favicon.svg"
+              src="./src/assets/favicon.svg"
               alt="Weather Studio"
               height={40}
               width={40}
