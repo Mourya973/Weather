@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -18,8 +18,10 @@ import type { WeatherData } from "./types/weather";
 type TemperatureUnit = "C" | "F";
 
 const WEATHER_STORAGE_KEY = "weather_dashboard_data";
+const UPDATED_STORAGE_KEY = "weather_last_updated";
+const DEFAULT_CITY = "Kolkata";
 
-// Restore previously saved weather data.
+// Restore saved weather data.
 function getSavedWeather(): WeatherData | null {
   try {
     const savedWeather = localStorage.getItem(WEATHER_STORAGE_KEY);
@@ -64,40 +66,66 @@ function getSavedWeather(): WeatherData | null {
   }
 }
 
-// Save weather data to localStorage.
-function saveWeather(weather: WeatherData) {
+// Restore the last updated timestamp.
+function getSavedTimestamp(): number | null {
+  try {
+    const savedTimestamp = localStorage.getItem(UPDATED_STORAGE_KEY);
+
+    if (!savedTimestamp) return null;
+
+    const timestamp = Number(savedTimestamp);
+
+    return Number.isFinite(timestamp) && timestamp > 0 ? timestamp : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveWeather(weather: WeatherData, timestamp: number) {
   try {
     localStorage.setItem(WEATHER_STORAGE_KEY, JSON.stringify(weather));
+    localStorage.setItem(UPDATED_STORAGE_KEY, String(timestamp));
   } catch (error) {
     console.error("Unable to save weather data:", error);
   }
 }
 
-// Remove saved weather data.
 function clearSavedWeather() {
   try {
     localStorage.removeItem(WEATHER_STORAGE_KEY);
+    localStorage.removeItem(UPDATED_STORAGE_KEY);
   } catch (error) {
     console.error("Unable to clear saved weather:", error);
   }
 }
 
 function App() {
-  // Restore weather immediately when the app loads.
-  const [weather, setWeather] = useState<WeatherData | null>(getSavedWeather);
+  // Read saved weather once during initialization.
+  const [initialWeather] = useState<WeatherData | null>(getSavedWeather);
+
+  const [weather, setWeather] = useState<WeatherData | null>(initialWeather);
 
   const [selectedCity, setSelectedCity] = useState(
-    () => getSavedWeather()?.city ?? "",
+    () => initialWeather?.city ?? "",
+  );
+
+  const [lastUpdated, setLastUpdated] = useState<number | null>(
+    getSavedTimestamp,
   );
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [unit, setUnit] = useState<TemperatureUnit>("C");
 
-  const handleSearch = async (city: string): Promise<boolean> => {
+  // Prevent duplicate default-city requests in React Strict Mode.
+  const hasInitialized = useRef(false);
+
+  // Search and update weather information.
+  const handleSearch = useCallback(async (city: string): Promise<boolean> => {
     if (!city.trim()) {
       setSelectedCity("");
       setWeather(null);
+      setLastUpdated(null);
       setError("");
       clearSavedWeather();
       return false;
@@ -108,19 +136,21 @@ function App() {
 
     try {
       const weatherData = await getWeatherInfo(city);
+      const updatedAt = Date.now();
 
       setWeather(weatherData);
       setSelectedCity(weatherData.city);
+      setLastUpdated(updatedAt);
 
-      // Persist successful weather response.
-      saveWeather(weatherData);
+      // Save weather and timestamp.
+      saveWeather(weatherData, updatedAt);
 
       return true;
     } catch (err) {
       setWeather(null);
       setSelectedCity("");
+      setLastUpdated(null);
 
-      // Remove old weather if the new search fails.
       clearSavedWeather();
 
       setError(
@@ -133,8 +163,20 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
+  // Load the default city only when there is no saved weather.
+  useEffect(() => {
+    if (hasInitialized.current) return;
+
+    hasInitialized.current = true;
+
+    if (!initialWeather) {
+      void handleSearch(DEFAULT_CITY);
+    }
+  }, [handleSearch, initialWeather]);
+
+  // Change temperature unit.
   const handleUnitChange = (
     _event: React.MouseEvent<HTMLElement>,
     newUnit: TemperatureUnit | null,
@@ -189,7 +231,6 @@ function App() {
             className="mt-6 flex items-center justify-center gap-3 rounded-2xl border border-white/80 bg-white/80 p-8 backdrop-blur-xl"
           >
             <CircularProgress size={24} />
-
             <Typography color="text.secondary">
               Fetching weather information...
             </Typography>
@@ -244,8 +285,18 @@ function App() {
               </ToggleButtonGroup>
             </div>
 
-            {/* Reusable InfoBox Component */}
             <InfoBox weather={weather} unit={unit} />
+
+            {/* Last Updated */}
+            {lastUpdated && (
+              <p className="mt-4 text-right text-xs text-slate-500">
+                Last updated:{" "}
+                {new Date(lastUpdated).toLocaleString("en-IN", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })}
+              </p>
+            )}
           </section>
         )}
 
