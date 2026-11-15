@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -173,12 +173,9 @@ function App() {
     () => initialWeather?.city ?? "",
   );
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!initialWeather);
   const [error, setError] = useState("");
   const [unit, setUnit] = useState<TemperatureUnit>("C");
-
-  // Prevent duplicate initial requests in React Strict Mode.
-  const hasInitialized = useRef(false);
 
   // Search and update weather information.
   const handleSearch = useCallback(async (city: string): Promise<boolean> => {
@@ -219,14 +216,44 @@ function App() {
 
   // Load default city if no saved weather exists.
   useEffect(() => {
-    if (hasInitialized.current) return;
+    if (initialWeather) return;
 
-    hasInitialized.current = true;
+    let ignore = false;
 
-    if (!initialWeather) {
-      void handleSearch(DEFAULT_CITY);
-    }
-  }, [handleSearch, initialWeather]);
+    const loadDefaultWeather = async () => {
+      try {
+        const weatherData = await getWeatherInfo(DEFAULT_CITY);
+
+        if (ignore) return;
+
+        const updatedAt = Date.now();
+
+        setWeather(weatherData);
+        setSelectedCity(weatherData.city);
+
+        saveWeather(weatherData, updatedAt);
+      } catch (err) {
+        if (ignore) return;
+
+        setWeather(null);
+        setSelectedCity("");
+
+        clearSavedWeather();
+
+        setError(getWeatherErrorMessage(err));
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadDefaultWeather();
+
+    return () => {
+      ignore = true;
+    };
+  }, [initialWeather]);
 
   // Change temperature unit.
   const handleUnitChange = (
@@ -253,13 +280,9 @@ function App() {
         {/* Dashboard Header */}
         <header className="mb-8">
           <div className="mb-3 flex items-center gap-2">
-            {/* <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/20">
-              <ThermostatOutlinedIcon />
-            </div> */}
-
             <img
-              src="./src/assets/favicon.svg"
-              alt="Weather.svg"
+              src="/favicon.svg"
+              alt="Weather Studio"
               height={40}
               width={40}
             />
