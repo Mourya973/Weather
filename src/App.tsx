@@ -81,6 +81,7 @@ function getSavedTimestamp(): number | null {
   }
 }
 
+// Save weather data and timestamp.
 function saveWeather(weather: WeatherData, timestamp: number) {
   try {
     localStorage.setItem(WEATHER_STORAGE_KEY, JSON.stringify(weather));
@@ -90,6 +91,7 @@ function saveWeather(weather: WeatherData, timestamp: number) {
   }
 }
 
+// Clear saved weather data.
 function clearSavedWeather() {
   try {
     localStorage.removeItem(WEATHER_STORAGE_KEY);
@@ -99,8 +101,85 @@ function clearSavedWeather() {
   }
 }
 
+// Get dashboard background based on weather.
+function getDashboardBackground(weather: WeatherData | null): string {
+  if (!weather) return "bg-[#eaf3fb]";
+
+  const description = weather.description.toLowerCase();
+  const icon = weather.icon;
+
+  // Snow and frost.
+  if (weather.temperature <= 0 || icon.startsWith("13")) {
+    return "bg-gradient-to-br from-slate-100 via-blue-100 to-cyan-100";
+  }
+
+  // Thunderstorm.
+  if (icon.startsWith("11") || description.includes("thunderstorm")) {
+    return "bg-gradient-to-br from-slate-300 via-indigo-100 to-slate-200";
+  }
+
+  // Rain and drizzle.
+  if (
+    icon.startsWith("09") ||
+    icon.startsWith("10") ||
+    description.includes("rain") ||
+    description.includes("drizzle")
+  ) {
+    return "bg-gradient-to-br from-slate-200 via-blue-100 to-sky-100";
+  }
+
+  // Mist and fog.
+  if (
+    icon.startsWith("50") ||
+    description.includes("mist") ||
+    description.includes("fog") ||
+    description.includes("haze")
+  ) {
+    return "bg-gradient-to-br from-slate-200 via-slate-100 to-blue-100";
+  }
+
+  // Clear sky.
+  if (icon.startsWith("01") || description.includes("clear")) {
+    return "bg-gradient-to-br from-amber-50 via-sky-100 to-blue-100";
+  }
+
+  // Cloudy conditions.
+  return "bg-gradient-to-br from-slate-100 via-sky-100 to-blue-100";
+}
+
+// Convert API errors into user-friendly messages.
+function getWeatherErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : "";
+  const normalized = message.toLowerCase();
+
+  if (
+    normalized.includes("404") ||
+    normalized.includes("city not found") ||
+    normalized.includes("not found")
+  ) {
+    return "City not found. Check the spelling or try another city.";
+  }
+
+  if (
+    normalized.includes("401") ||
+    normalized.includes("invalid api key") ||
+    normalized.includes("unauthorized")
+  ) {
+    return "Weather API authentication failed. Check your OpenWeatherMap API key.";
+  }
+
+  if (
+    normalized.includes("failed to fetch") ||
+    normalized.includes("network")
+  ) {
+    return "Network error. Check your internet connection and try again.";
+  }
+
+  return message || "Unable to fetch weather information. Please try again.";
+}
+
 function App() {
-  // Read saved weather once during initialization.
+  // Restore weather once during initialization.
   const [initialWeather] = useState<WeatherData | null>(getSavedWeather);
 
   const [weather, setWeather] = useState<WeatherData | null>(initialWeather);
@@ -117,7 +196,7 @@ function App() {
   const [error, setError] = useState("");
   const [unit, setUnit] = useState<TemperatureUnit>("C");
 
-  // Prevent duplicate default-city requests in React Strict Mode.
+  // Prevent duplicate initial requests in React Strict Mode.
   const hasInitialized = useRef(false);
 
   // Search and update weather information.
@@ -142,7 +221,6 @@ function App() {
       setSelectedCity(weatherData.city);
       setLastUpdated(updatedAt);
 
-      // Save weather and timestamp.
       saveWeather(weatherData, updatedAt);
 
       return true;
@@ -153,11 +231,7 @@ function App() {
 
       clearSavedWeather();
 
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong. Please try again.",
-      );
+      setError(getWeatherErrorMessage(err));
 
       return false;
     } finally {
@@ -165,7 +239,7 @@ function App() {
     }
   }, []);
 
-  // Load the default city only when there is no saved weather.
+  // Load default city if no saved weather exists.
   useEffect(() => {
     if (hasInitialized.current) return;
 
@@ -187,7 +261,9 @@ function App() {
   };
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#eaf3fb] px-4 py-8 sm:px-8 sm:py-12">
+    <main
+      className={`relative min-h-screen overflow-hidden px-4 py-8 transition-colors duration-700 sm:px-8 sm:py-12 ${getDashboardBackground(weather)}`}
+    >
       {/* Atmospheric Background */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-sky-300/30 blur-3xl" />
@@ -231,6 +307,7 @@ function App() {
             className="mt-6 flex items-center justify-center gap-3 rounded-2xl border border-white/80 bg-white/80 p-8 backdrop-blur-xl"
           >
             <CircularProgress size={24} />
+
             <Typography color="text.secondary">
               Fetching weather information...
             </Typography>
