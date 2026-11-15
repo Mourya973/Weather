@@ -85,9 +85,9 @@ export async function getWeatherInfo(city: string): Promise<WeatherData> {
     console.error("Weather fetch failed:", error);
 
     if (error instanceof TypeError) {
-      throw new Error(
-        "Unable to connect to the weather service. Check your internet connection.",
-      );
+      throw new Error("Unable to connect to the weather service.", {
+        cause: error,
+      });
     }
 
     throw error;
