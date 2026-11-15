@@ -16,8 +16,9 @@ import CloseIcon from "@mui/icons-material/Close";
 import AppButton from "./AppButton";
 
 interface SearchBoxProps {
-  onSearch: (city: string) => void;
+  onSearch: (city: string) => Promise<boolean>;
   selectedCity: string;
+  loading: boolean;
 }
 
 const STORAGE_KEY = "weather_recent_cities";
@@ -44,7 +45,11 @@ function getRecentSearches(): string[] {
   }
 }
 
-export default function SearchBox({ onSearch, selectedCity }: SearchBoxProps) {
+export default function SearchBox({
+  onSearch,
+  selectedCity,
+  loading,
+}: SearchBoxProps) {
   const [city, setCity] = useState("");
   const [recentCities, setRecentCities] = useState<string[]>(getRecentSearches);
   const [error, setError] = useState("");
@@ -59,7 +64,7 @@ export default function SearchBox({ onSearch, selectedCity }: SearchBoxProps) {
   }, [recentCities]);
 
   // Submit city search.
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const trimmedCity = city.trim();
@@ -74,25 +79,30 @@ export default function SearchBox({ onSearch, selectedCity }: SearchBoxProps) {
       return;
     }
 
-    const updatedHistory = [
-      trimmedCity,
-      ...recentCities.filter(
-        (item) => item.toLowerCase() !== trimmedCity.toLowerCase(),
-      ),
-    ].slice(0, MAX_RECENT_SEARCHES);
-
-    setRecentCities(updatedHistory);
     setError("");
-    setCity("");
 
-    onSearch(trimmedCity);
+    const success = await onSearch(trimmedCity);
+
+    if (success) {
+      setRecentCities((previous) =>
+        [
+          trimmedCity,
+          ...previous.filter(
+            (item) => item.toLowerCase() !== trimmedCity.toLowerCase(),
+          ),
+        ].slice(0, MAX_RECENT_SEARCHES),
+      );
+
+      setCity("");
+    }
   };
 
   // Search a previously searched city.
-  const handleRecentSearch = (selectedCityName: string) => {
+  const handleRecentSearch = async (selectedCityName: string) => {
     setError("");
     setCity("");
-    onSearch(selectedCityName);
+
+    await onSearch(selectedCityName);
   };
 
   // Remove one city from history and clear selection if necessary.
@@ -104,7 +114,7 @@ export default function SearchBox({ onSearch, selectedCity }: SearchBoxProps) {
     );
 
     if (selectedCity.toLowerCase() === cityToRemove.toLowerCase()) {
-      onSearch("");
+      void onSearch("");
     }
   };
 
@@ -117,7 +127,7 @@ export default function SearchBox({ onSearch, selectedCity }: SearchBoxProps) {
         (item) => item.toLowerCase() === selectedCity.toLowerCase(),
       )
     ) {
-      onSearch("");
+      void onSearch("");
     }
   };
 
@@ -145,6 +155,7 @@ export default function SearchBox({ onSearch, selectedCity }: SearchBoxProps) {
       <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row">
         <TextField
           fullWidth
+          disabled={loading}
           label="City name"
           placeholder="e.g. Mumbai, Kolkata, Delhi"
           value={city}
@@ -173,6 +184,7 @@ export default function SearchBox({ onSearch, selectedCity }: SearchBoxProps) {
           type="submit"
           variant="contained"
           size="large"
+          disabled={loading}
           startIcon={<SearchIcon />}
           sx={{
             minWidth: { sm: 145 },
@@ -180,7 +192,7 @@ export default function SearchBox({ onSearch, selectedCity }: SearchBoxProps) {
             fontWeight: 600,
           }}
         >
-          Search
+          {loading ? "Searching..." : "Search"}
         </AppButton>
       </form>
 
@@ -199,7 +211,8 @@ export default function SearchBox({ onSearch, selectedCity }: SearchBoxProps) {
             <button
               type="button"
               onClick={handleClearHistory}
-              className="flex items-center gap-1 text-sm text-red-500 transition-colors hover:text-red-700"
+              disabled={loading}
+              className="flex items-center gap-1 text-sm text-red-500 transition-colors hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <DeleteOutlined fontSize="small" />
               Clear all
@@ -213,6 +226,7 @@ export default function SearchBox({ onSearch, selectedCity }: SearchBoxProps) {
                 icon={<LocationOnOutlinedIcon />}
                 label={recentCity}
                 variant="outlined"
+                disabled={loading}
                 onClick={() => handleRecentSearch(recentCity)}
                 onDelete={() => handleRemoveCity(recentCity)}
                 deleteIcon={<CloseIcon />}
