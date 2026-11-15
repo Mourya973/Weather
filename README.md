@@ -15,7 +15,7 @@ A responsive weather dashboard built with **React, TypeScript, Vite, Material UI
 ## 🌐 Live Demo
 
 <p align="center">
-  <a href="https://weather-dashboard-mauve-ten.vercel.app/">
+  <a href="https://weather-dashboard-mauve-ten.vercel.app/" target="_blank">
     <strong>🚀 View Weather Studio Live</strong>
   </a>
 </p>
