@@ -12,6 +12,16 @@ A responsive weather dashboard built with **React, TypeScript, Vite, Material UI
 
 ---
 
+## 🌐 Live Demo
+
+<p align="center">
+  <a href="YOUR_VERCEL_DEPLOYMENT_URL">
+    <strong>🚀 View Weather Studio Live</strong>
+  </a>
+</p>
+
+---
+
 ## ✨ Features
 
 - 🔍 **City Search** — Search for weather conditions by city name.
