@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import logo from "./assets/favicon.svg"
 
 import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -281,7 +282,7 @@ function App() {
         <header className="mb-8">
           <div className="mb-3 flex items-center gap-2">
             <img
-              src="./src/assets/favicon.svg"
+              src={logo}
               alt="Weather Studio"
               height={40}
               width={40}
