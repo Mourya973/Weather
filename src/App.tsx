@@ -66,21 +66,6 @@ function getSavedWeather(): WeatherData | null {
   }
 }
 
-// Restore the last updated timestamp.
-function getSavedTimestamp(): number | null {
-  try {
-    const savedTimestamp = localStorage.getItem(UPDATED_STORAGE_KEY);
-
-    if (!savedTimestamp) return null;
-
-    const timestamp = Number(savedTimestamp);
-
-    return Number.isFinite(timestamp) && timestamp > 0 ? timestamp : null;
-  } catch {
-    return null;
-  }
-}
-
 // Save weather data and timestamp.
 function saveWeather(weather: WeatherData, timestamp: number) {
   try {
@@ -188,10 +173,6 @@ function App() {
     () => initialWeather?.city ?? "",
   );
 
-  const [lastUpdated, setLastUpdated] = useState<number | null>(
-    getSavedTimestamp,
-  );
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [unit, setUnit] = useState<TemperatureUnit>("C");
@@ -204,7 +185,6 @@ function App() {
     if (!city.trim()) {
       setSelectedCity("");
       setWeather(null);
-      setLastUpdated(null);
       setError("");
       clearSavedWeather();
       return false;
@@ -219,7 +199,6 @@ function App() {
 
       setWeather(weatherData);
       setSelectedCity(weatherData.city);
-      setLastUpdated(updatedAt);
 
       saveWeather(weatherData, updatedAt);
 
@@ -227,7 +206,6 @@ function App() {
     } catch (err) {
       setWeather(null);
       setSelectedCity("");
-      setLastUpdated(null);
 
       clearSavedWeather();
 
@@ -275,11 +253,18 @@ function App() {
         {/* Dashboard Header */}
         <header className="mb-8">
           <div className="mb-3 flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/20">
+            {/* <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/20">
               <ThermostatOutlinedIcon />
-            </div>
+            </div> */}
 
-            <span className="text-sm font-bold tracking-[0.18em] text-blue-700">
+            <img
+              src="./src/assets/favicon.svg"
+              alt="Weather.svg"
+              height={40}
+              width={40}
+            />
+
+            <span className="text-sm font-bold tracking-wide text-blue-700">
               WEATHER STUDIO
             </span>
           </div>
@@ -326,7 +311,7 @@ function App() {
           <section className="mt-7">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700">
+                <p className="text-xs font-bold uppercase tracking-wide text-blue-700">
                   Live weather
                 </p>
 
@@ -363,17 +348,6 @@ function App() {
             </div>
 
             <InfoBox weather={weather} unit={unit} />
-
-            {/* Last Updated */}
-            {lastUpdated && (
-              <p className="mt-4 text-right text-xs text-slate-500">
-                Last updated:{" "}
-                {new Date(lastUpdated).toLocaleString("en-IN", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                })}
-              </p>
-            )}
           </section>
         )}
 
@@ -394,11 +368,6 @@ function App() {
             </p>
           </div>
         )}
-
-        {/* Footer */}
-        <footer className="mt-10 pb-4 text-center text-xs text-slate-500">
-          Weather data provided by OpenWeatherMap
-        </footer>
       </div>
     </main>
   );

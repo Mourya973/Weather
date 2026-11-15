@@ -134,7 +134,7 @@ export default function SearchBox({
   return (
     <Paper
       elevation={0}
-      className="w-full rounded-2xl border border-gray-200 p-5 sm:p-7"
+      className="w-full rounded-2xl! border border-gray-200 p-5 sm:p-7"
     >
       {/* Header */}
       <Box className="mb-7 flex items-center justify-between">
@@ -147,8 +147,6 @@ export default function SearchBox({
             Search for a city to explore its weather conditions.
           </Typography>
         </Box>
-
-        <LocationOnOutlinedIcon sx={{ fontSize: 38, color: "#2196f3" }} />
       </Box>
 
       {/* Search Form */}

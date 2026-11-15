@@ -1,0 +1,26 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="64" height="64" rx="16" fill="url(#bg)"/>
+
+  <!-- Sun -->
+  <circle cx="43" cy="22" r="9" fill="#facc15"/>
+
+  <!-- Sun rays -->
+  <g stroke="#facc15" stroke-width="2.5" stroke-linecap="round">
+    <path d="M43 8v-3 M43 39v-3 M29 22h-3 M60 22h-3"/>
+    <path d="m33 12-2-2 M53 32l2 2 M53 12l2-2"/>
+  </g>
+
+  <!-- Cloud -->
+  <path
+    d="M16 45h29a9 9 0 0 0 0-18 13 13 0 0 0-25-2 10 10 0 0 0-4 20Z"
+    fill="#ffffff"
+  />
+</svg>
